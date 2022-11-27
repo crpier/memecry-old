@@ -2,15 +2,15 @@ import { trpc } from "@/utils/trpc";
 import { BsSearch } from "react-icons/bs";
 
 import Link from "next/link";
+import { useSession, signIn, signOut } from "next-auth/react";
 
 export default function NavBar({}) {
-  const hello = trpc.post.hello.useQuery({ text: "client" });
-  let username: string;
-  if (!hello.data) {
-    username = "Loading...";
-  } else {
-    username = hello.data.greeting;
-  }
+  const { data: sessionData } = useSession();
+
+  const { data: secretMessage } = trpc.auth.getSecretMessage.useQuery(
+    undefined,
+    { enabled: sessionData?.user !== undefined }
+  );
   return (
     <nav className="flex flex-wrap content-center items-center justify-center justify-items-center bg-gray-900 p-3">
       <div className="mr-6 flex flex-shrink-0 items-center text-white">
@@ -52,12 +52,20 @@ export default function NavBar({}) {
         <button className="mx-4">
           <BsSearch size={"2em"} />
         </button>
-        <Link
-          href="#"
+        {sessionData && (
+          <Link
+            href="#responsive-header"
+            className="inline-block rounded border border-white px-4 py-2 text-sm leading-none text-white hover:border-transparent hover:bg-white hover:text-teal-500 mr-4"
+          >
+            {sessionData.user?.name}
+          </Link>
+        )}
+        <button
           className="inline-block rounded border border-white px-4 py-2 text-sm leading-none text-white hover:border-transparent hover:bg-white hover:text-teal-500"
+          onClick={sessionData ? () => signOut() : () => signIn()}
         >
-          {username}
-        </Link>
+          {sessionData ? "Sign out" : "Sign in"}
+        </button>
       </div>
     </nav>
   );

@@ -19,6 +19,10 @@ const config = {
         protocol: "https",
         hostname: "misc-personal-projects.s3.eu-west-1.amazonaws.com",
       },
+      {
+        protocol: "https",
+        hostname: "cdn.discordapp.com",
+      },
     ],
   },
 };

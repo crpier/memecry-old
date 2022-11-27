@@ -7,6 +7,7 @@ import {
 } from "@/components/asides";
 import CommentSection from "@/components/comments";
 import Post from "@/components/post";
+import UploadPost from "@/components/upload_post";
 
 export default function Posts() {
   const postsData = trpc.post.getAll.useQuery();
@@ -28,6 +29,7 @@ export default function Posts() {
 
   return (
     <div>
+          <UploadPost></UploadPost>
       <div className="flex flex-grow-0 flex-row items-start justify-center justify-center">
         <div style={{ width: 300 }}></div>
         <main

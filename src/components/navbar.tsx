@@ -5,6 +5,7 @@ import { useSession, signIn, signOut } from "next-auth/react";
 
 import React from "react";
 import Image from "next/image";
+import UploadPost from "./upload_post";
 
 export default function NavBar({}) {
   const { data: sessionData } = useSession();
@@ -31,18 +32,20 @@ export default function NavBar({}) {
       {sessionData && (
         <Link
           href="#responsive-header"
-          className="flex flex-row text-gray-200 hover:text-white items-center hover:bg-gray-800 pr-2"
+          className="flex flex-row items-center pr-2 text-gray-200 hover:bg-gray-800 hover:text-white"
         >
-          <Image
-            className="mr-2"
-            width={32}
-            height={32}
-            alt="profile-picture"
-            src={
-              sessionData.user?.image ||
-              "https://misc-personal-projects.s3.eu-west-1.amazonaws.com/memecry/13.jpg"
-            }
-          ></Image>
+          <button>
+            <Image
+              className="mr-2"
+              width={32}
+              height={32}
+              alt="profile-picture"
+              src={
+                sessionData.user?.image ||
+                "https://misc-personal-projects.s3.eu-west-1.amazonaws.com/memecry/13.jpg"
+              }
+            ></Image>
+          </button>
           <span>{sessionData.user?.name}</span>
         </Link>
       )}
@@ -59,13 +62,17 @@ export default function NavBar({}) {
         </button>
       )}
       {sessionData && (
-        <button className="inline-block rounded border-white bg-blue-500 px-4 py-2 text-sm font-semibold leading-none text-white hover:border-transparent hover:bg-white hover:text-teal-500 mr-4">
-          Upload
-        </button>
+        <UploadPost>
+          <button className="mr-4 inline-block rounded border-white bg-blue-500 px-4 py-2 text-sm font-semibold leading-none text-white hover:border-transparent hover:bg-white hover:text-teal-500">
+            Upload
+          </button>
+        </UploadPost>
       )}
       {sessionData && (
-        <button className="inline-block rounded border-white border rounded px-4 py-2 text-sm leading-none text-white hover:border-transparent hover:bg-white hover:text-teal-500"
-        onClick={() => signOut()}>
+        <button
+          className="inline-block rounded rounded border border-white px-4 py-2 text-sm leading-none text-white hover:border-transparent hover:bg-white hover:text-teal-500"
+          onClick={() => signOut()}
+        >
           Sign Out
         </button>
       )}

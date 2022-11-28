@@ -1,14 +1,51 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, ReactElement } from "react";
 import ReactDOM from "react-dom";
+import { PostContent } from "./post";
 
-export default function UploadPost(props) {
-  const [isBrowser, setIsBrowser] = useState(false);
+export default function UploadPost(props: { children: ReactElement }) {
+  const [modalOpen, setModalOpen] = useState(false);
+  const [fileUploaded, setfileUploaded] = useState(null);
+  const [createObjectURL, setCreateObjectURL] = useState("");
 
-  const closeModal = () => setIsBrowser(false);
-  const openModal = () => setIsBrowser(true);
+  const closeModal = () => {
+    setModalOpen(false);
+    setfileUploaded(null);
+    setCreateObjectURL("");
+  };
+  const openModal = () => setModalOpen(true);
 
+  let contentSection;
+
+  // Handling file upload
+  const uploadToClient = (event) => {
+    if (event.target?.files[0]) {
+      const f = event.target.files[0];
+      setfileUploaded(f);
+      console.log(f.name);
+      const url = URL.createObjectURL(f);
+      setCreateObjectURL(url);
+    }
+  };
+  if (fileUploaded) {
+    contentSection = <PostContent url={createObjectURL} name={fileUploaded.name}/>;
+  } else {
+    contentSection = (
+      <div className="flex h-64 flex-col items-center rounded border border-dashed bg-gray-900 p-6 text-center">
+        <label className="mb-4" htmlFor="ff">
+          Upload file up to 10mb
+        </label>
+        <input
+          className="w-max"
+          type="file"
+          placeholder="lolaw"
+          id="ff"
+          onChange={uploadToClient}
+        />
+      </div>
+    );
+  }
   let modal;
-  if (isBrowser) {
+  if (modalOpen) {
     modal = ReactDOM.createPortal(
       <div
         className="absolute flex flex-col rounded border bg-gray-700 px-4 pb-4"
@@ -27,9 +64,7 @@ export default function UploadPost(props) {
           <label className="">Title</label>
           <input className="w-full rounded border p-1" />
         </div>
-        <div className="h-64 rounded border border-dashed bg-gray-900 p-6 text-center">
-          Upload something or whatev
-        </div>
+        {contentSection}
         <div className="">
           <div>Tags</div>
           <div>
@@ -47,19 +82,19 @@ export default function UploadPost(props) {
             </label>
             <input className="mr-2" type="checkbox" id="d" />
             <label className="mr-8" htmlFor="d">
-              For Event
+              Event
             </label>
           </div>
         </div>
       </div>,
-      document.getElementById("modal-root")
+      document.getElementById("modal-root") as HTMLElement
     );
   } else {
     modal = null;
   }
 
   return (
-    <div id="modal-root" onClick={isBrowser ? () => null : openModal}>
+    <div id="modal-root" onClick={modalOpen ? () => null : openModal}>
       {modal}
       {props.children}
     </div>

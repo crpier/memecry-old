@@ -14,6 +14,7 @@ const MyApp: AppType<{ session: Session | null }> = ({
   return (
     <SessionProvider session={session}>
       <NavBar></NavBar>
+      <div className="py-8"></div>
       <Component {...pageProps} />
     </SessionProvider>
   );

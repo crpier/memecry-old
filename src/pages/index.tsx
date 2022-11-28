@@ -6,8 +6,7 @@ import {
   LeaderBoard,
 } from "@/components/asides";
 import CommentSection from "@/components/comments";
-import Post from "@/components/post";
-import UploadPost from "@/components/upload_post";
+import PostView from "@/components/post";
 
 export default function Posts() {
   const postsData = trpc.post.getAll.useQuery();
@@ -16,20 +15,19 @@ export default function Posts() {
     posts = <div>Loading</div>;
   } else {
     posts = postsData.data.map((post) => (
-      <Post
+      <PostView
         key={post.id}
         title={post.title}
         owner={post.owner}
         id={post.id}
         url={post.url}
         tags={post.tags}
-      ></Post>
+      ></PostView>
     ));
   }
 
   return (
     <div>
-          <UploadPost></UploadPost>
       <div className="flex flex-grow-0 flex-row items-start justify-center justify-center">
         <div style={{ width: 300 }}></div>
         <main

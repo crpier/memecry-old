@@ -11,7 +11,7 @@ export default function NavBar({}) {
   const { data: sessionData } = useSession();
 
   return (
-    <nav className="flex flex-row items-center bg-gray-900 p-3">
+    <nav className="flex flex-row items-center bg-gray-900 p-3 fixed w-full">
       <div className="mr-6 flex flex-shrink-0 items-center text-white">
         <span className="text-xl font-semibold tracking-tight">Memecry</span>
       </div>

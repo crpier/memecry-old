@@ -1,4 +1,4 @@
-import { useState, ReactElement, FormEvent } from "react";
+import { useState, ReactElement, FormEvent, ChangeEvent } from "react";
 import ReactDOM from "react-dom";
 import { PostContent } from "./post";
 import { trpc } from "@/utils/trpc";
@@ -23,9 +23,12 @@ export default function UploadPost(props: { children: ReactElement }) {
   let contentSection;
 
   // Handling file upload
-  const uploadToClient = (event) => {
-    if (event.target?.files[0]) {
-      const f = event.target.files[0];
+  const uploadToClient = (event: ChangeEvent<HTMLInputElement>) => {
+    const target = event.target as HTMLInputElement
+    const targetFiles = target.files as FileList
+    const targetFile = targetFiles[0]
+    if (targetFile) {
+      const f = targetFile;
       setfileUploaded(f);
       console.log(f.name);
       const url = URL.createObjectURL(f);
@@ -33,7 +36,7 @@ export default function UploadPost(props: { children: ReactElement }) {
     }
   };
 
-  const uploadToServer = async (event) => {
+  const uploadToServer = async () => {
     let fileType: string = fileUploaded.type;
     if (fileType.includes("/")) {
       const typeParts = fileType.split("/");
@@ -52,7 +55,7 @@ export default function UploadPost(props: { children: ReactElement }) {
       },
       {
         onSuccess: async (data, variables, context) => {
-          let resp = await fetch(data, {
+          const resp = await fetch(data, {
             body: fileUploaded,
             headers: {
               "Content-type": fileType,
@@ -79,7 +82,7 @@ export default function UploadPost(props: { children: ReactElement }) {
     }
     const changedTag = label.innerText;
     const newTagValue = target.checked;
-    let oldTags = new Set(tags.split(","));
+    const oldTags = new Set(tags.split(","));
     if (newTagValue) {
       oldTags.add(changedTag);
     } else {

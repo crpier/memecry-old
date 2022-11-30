@@ -2,11 +2,13 @@ import { z } from "zod";
 
 import { router, publicProcedure, protectedProcedure } from "../trpc";
 import { S3 } from "aws-sdk/clients/all";
-import { Post } from "prisma/prisma-client";
+import { env } from "../../../env/server.mjs";
 
 const s3 = new S3({
   region: "eu-west-1",
   signatureVersion: "v4",
+  accessKeyId: env.YOUR_APP_AWS_ACCESS_KEY_ID,
+  secretAccessKey: env.YOUR_APP_AWS_ACCESS_KEY_ID,
 });
 
 export const config = {
@@ -60,12 +62,14 @@ export const postRouter = router({
         });
         return newPost;
       });
-      return await s3.getSignedUrlPromise("putObject", {
+      const signedUrl = s3.getSignedUrl("putObject", {
         Bucket: "misc-personal-projects",
         Key: `memecry${fileName}`,
         Expires: 500,
         ContentType: input.fileType,
         ACL: "public-read",
       });
+      console.log(`Generated url ${signedUrl}`);
+      return signedUrl;
     }),
 });

@@ -255,9 +255,6 @@ async def login(
     access_token = security.create_access_token(
         data={"sub": user.username}, settings=settings
     )
-    response.set_cookie(key="Authorization", value=access_token, httponly=True)
-    response.headers["HX-Refresh"] = "true"
-    response.status_code = 303
     return {"access_token": access_token, "token_type": "bearer"}
 
 

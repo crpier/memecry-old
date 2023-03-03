@@ -24,5 +24,6 @@ gitignore
 Thumbs.db
 
 __pycache__/
+media/
 .env
 *.db

@@ -1,0 +1,31 @@
+[tool.poetry]
+name = "memecry"
+version = "0.1.0"
+description = ""
+authors = ["crpier <crpier42@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+fastapi = "^0.89.1"
+uvicorn = "^0.20.0"
+python-multipart = "^0.0.5"
+aiofiles = "^22.1.0"
+python-jose = {extras = ["cryptography"], version = "^3.3.0"}
+passlib = {extras = ["bcrypt"], version = "^1.7.4"}
+sqlmodel = "^0.0.8"
+pydantic = {extras = ["dotenv", "email"], version = "^1.10.4"}
+jinja2 = "^3.1.2"
+babel = "^2.11.0"
+gunicorn = "^20.1.0"
+pyxl4 = "^1.0.0a1"
+simple-html = "^0.7.0"
+
+
+[tool.poetry.group.dev.dependencies]
+isort = "^5.11.4"
+black = "^22.12.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

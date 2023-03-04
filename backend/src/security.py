@@ -1,4 +1,5 @@
 import datetime
+from typing import NotRequired, TypedDict
 
 import jose
 import jose.jwt
@@ -9,9 +10,16 @@ from src import config
 pwd_context = passlib.context.CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
-def create_access_token(data: dict, settings: config.Settings):
+class TokenCreateData(TypedDict):
+    sub: str
+    exp: NotRequired[int]
+
+
+def create_access_token(data: TokenCreateData, settings: config.Settings) -> str:
     to_encode = data.copy()
-    expire = datetime.datetime.utcnow() + datetime.timedelta(minutes=100)
+    expire = datetime.datetime.now(tz=datetime.timezone.utc) + datetime.timedelta(
+        minutes=100,
+    )
     to_encode.update({"exp": expire})
     return jose.jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
 

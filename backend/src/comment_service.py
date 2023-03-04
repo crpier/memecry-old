@@ -1,12 +1,12 @@
 import logging
-from typing import Callable
+from datetime import datetime
+from typing import Callable, NewType, TypedDict
 
 import aiofiles
-from fastapi import UploadFile
-from sqlmodel import Session, select
 import babel.dates
-from datetime import datetime
+from fastapi import UploadFile
 from sqlalchemy.orm import selectinload
+from sqlmodel import Session, select
 
 from src import config, models, schema
 
@@ -24,8 +24,8 @@ async def post_comment(
         if comment_data.post_id is None:
             res = s.execute(
                 select(models.Comment).where(
-                    models.Comment.id == comment_data.parent_id
-                )
+                    models.Comment.id == comment_data.parent_id,
+                ),
             ).one()
             parent_comment: models.Comment = res[0]
             comment_data.post_id = int(str(parent_comment.post_id))
@@ -48,23 +48,26 @@ async def post_comment(
             new_comment.attachment_source = str(dest)
             s.add(new_comment)
             s.commit()
-        return new_comment.post_id # type: ignore
+        return new_comment.post_id  # type: ignore
 
 
 def get_comments_per_post(
-    session: Callable[[], Session], post_id: int
+    session: Callable[[], Session],
+    post_id: int,
 ) -> list[schema.Comment]:
     with session() as s:
         results = s.exec(
             select(models.Comment)
             .where(models.Comment.post_id == post_id)
-            .order_by(models.Comment.created_at.desc()) # type: ignore
+            .order_by(models.Comment.created_at.desc()),  # type: ignore
         ).all()
         return [schema.Comment.from_orm(comment) for comment in results]
 
 
 def get_children_comment_tree(
-    session: Callable[[], Session], parent_id: int, all_comments: list[schema.Comment]
+    session: Callable[[], Session],
+    parent_id: int,
+    all_comments: list[schema.Comment],
 ) -> dict[schema.Comment, dict]:
     tree = {}
     direct_children_ids = [
@@ -72,31 +75,48 @@ def get_children_comment_tree(
     ]
     for child_id in direct_children_ids:
         tree[child_id] = get_children_comment_tree(
-            session=session, parent_id=child_id, all_comments=all_comments  # type: ignore
+            session=session,
+            parent_id=child_id,
+            all_comments=all_comments,  # type: ignore
         )
     return tree
 
 
+ids_tree = NewType("ids_tree", dict[int, "ids_tree"])
+
+
+# TODO: move this to schema.py
+class CommentsTreeResp(TypedDict):
+    comments: dict[int, schema.Comment]
+    tree: ids_tree
+
+
 def get_comment_tree(
-    session: Callable[[], Session], post_id: int
-) -> tuple[dict[int, schema.Comment], dict]:
-    tree = {}
+    session: Callable[[], Session],
+    post_id: int,
+) -> CommentsTreeResp:
+    tree: ids_tree = {}
     now = datetime.utcnow()
     with session() as s:
         all_comments = s.exec(
             select(models.Comment)
             .options(selectinload(models.Comment.user))
             .where(models.Comment.post_id == post_id)
-            .order_by(models.Comment.created_at.desc()) # type: ignore
+            .order_by(models.Comment.created_at.desc()),  # type: ignore
         ).all()
         for comment in all_comments:
             comment.created_at = babel.dates.format_timedelta(  # type: ignore
-                comment.created_at - now, add_direction=True, locale="en_US"
+                comment.created_at - now,
+                add_direction=True,
+                locale="en_US",
             )
         root_comments_ids = [
             comment.id for comment in all_comments if comment.parent_id is None
         ]
         for comment_id in root_comments_ids:
             tree[comment_id] = get_children_comment_tree(session=session, parent_id=comment_id, all_comments=all_comments)  # type: ignore
-        comments_dict = {comment.id: comment for comment in all_comments}
-        return comments_dict, tree # type: ignore
+        comments_dict: dict[int, schema.Comment] = {
+            comment.id: comment for comment in all_comments
+        }
+
+        return {"comments": comments_dict, "tree": tree}

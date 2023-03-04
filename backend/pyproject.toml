@@ -18,13 +18,15 @@ pydantic = {extras = ["dotenv", "email"], version = "^1.10.4"}
 jinja2 = "^3.1.2"
 babel = "^2.11.0"
 gunicorn = "^20.1.0"
-pyxl4 = "^1.0.0a1"
-simple-html = "^0.7.0"
-
 
 [tool.poetry.group.dev.dependencies]
-isort = "^5.11.4"
+ruff = "^0.0.254"
 black = "^22.12.0"
+
+[tool.ruff]
+extend-select = ["F", "E", "W", "C90", "I", "N", "UP", "YTT", "ANN", "S", "BLE", "FBT", "B", "A", "COM", "C4", "DTZ", "T10", "EM", "EXE", "ISC", "ICN", "G", "INP", "PIE", "T20", "PYI", "PT", "Q", "RSE", "RET", "SLF", "SIM", "TID", "TCH", "ARG", "PTH", "ERA", "PD", "PGH", "PL", "TRY", "RUF"]
+ignore = ["B008", "UP035"]
+
 
 [build-system]
 requires = ["poetry-core"]

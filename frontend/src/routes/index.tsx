@@ -1,7 +1,6 @@
 import { ImArrowUp, ImArrowDown } from 'solid-icons/im'
 import { BsChatLeft } from 'solid-icons/bs'
 import { A } from "solid-start";
-import Counter from "~/components/Counter";
 
 export default function Home() {
   return (

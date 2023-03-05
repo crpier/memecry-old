@@ -27,3 +27,6 @@ __pycache__/
 media/
 .env
 *.db
+
+# generated code
+/frontend/src/memecry-backend/

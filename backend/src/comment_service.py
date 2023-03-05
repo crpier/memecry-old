@@ -1,12 +1,11 @@
+import datetime
 import logging
-from datetime import datetime
 from typing import Callable, NewType, TypedDict
 
 import aiofiles
-import babel.dates
 from fastapi import UploadFile
 from sqlalchemy.orm import selectinload
-from sqlmodel import Session, select
+from sqlmodel import Session, select  # pyright: ignore [reportUnknownVariableType]
 
 from src import config, models, schema
 
@@ -48,7 +47,7 @@ async def post_comment(
             new_comment.attachment_source = str(dest)
             s.add(new_comment)
             s.commit()
-        return new_comment.post_id  # type: ignore
+        return new_comment.post_id  # pyright: ignore
 
 
 def get_comments_per_post(
@@ -59,30 +58,30 @@ def get_comments_per_post(
         results = s.exec(
             select(models.Comment)
             .where(models.Comment.post_id == post_id)
-            .order_by(models.Comment.created_at.desc()),  # type: ignore
+            .order_by(models.Comment.created_at.desc()),  # pyright: ignore
         ).all()
         return [schema.Comment.from_orm(comment) for comment in results]
+
+
+ids_tree = NewType("ids_tree", dict[int, "ids_tree"])
 
 
 def get_children_comment_tree(
     session: Callable[[], Session],
     parent_id: int,
     all_comments: list[schema.Comment],
-) -> dict[schema.Comment, dict]:
-    tree = {}
+) -> ids_tree:
+    tree: ids_tree = {}  # pyright: ignore
     direct_children_ids = [
         comment.id for comment in all_comments if comment.parent_id == parent_id
     ]
     for child_id in direct_children_ids:
-        tree[child_id] = get_children_comment_tree(
+        tree[child_id] = get_children_comment_tree(  # pyright: ignore
             session=session,
             parent_id=child_id,
-            all_comments=all_comments,  # type: ignore
+            all_comments=all_comments,
         )
     return tree
-
-
-ids_tree = NewType("ids_tree", dict[int, "ids_tree"])
 
 
 # TODO: move this to schema.py
@@ -95,27 +94,25 @@ def get_comment_tree(
     session: Callable[[], Session],
     post_id: int,
 ) -> CommentsTreeResp:
-    tree: ids_tree = {}
-    now = datetime.utcnow()
+    tree: ids_tree = {}  # pyright: ignore
+    datetime.datetime.now(tz=datetime.timezone.utc)
     with session() as s:
         all_comments = s.exec(
             select(models.Comment)
             .options(selectinload(models.Comment.user))
             .where(models.Comment.post_id == post_id)
-            .order_by(models.Comment.created_at.desc()),  # type: ignore
+            .order_by(models.Comment.created_at.desc()),  # pyright: ignore
         ).all()
-        for comment in all_comments:
-            comment.created_at = babel.dates.format_timedelta(  # type: ignore
-                comment.created_at - now,
-                add_direction=True,
-                locale="en_US",
-            )
         root_comments_ids = [
             comment.id for comment in all_comments if comment.parent_id is None
         ]
         for comment_id in root_comments_ids:
-            tree[comment_id] = get_children_comment_tree(session=session, parent_id=comment_id, all_comments=all_comments)  # type: ignore
-        comments_dict: dict[int, schema.Comment] = {
+            tree[comment_id] = get_children_comment_tree(  # pyright: ignore
+                session=session,
+                parent_id=comment_id,  # pyright: ignore
+                all_comments=all_comments,  # pyright: ignore
+            )
+        comments_dict: dict[int, schema.Comment] = {  # pyright: ignore
             comment.id: comment for comment in all_comments
         }
 

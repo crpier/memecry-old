@@ -1,24 +1,25 @@
 import enum
 from datetime import datetime
 
-from pydantic import EmailStr, PrivateAttr
+from pydantic import EmailStr
+from sqlalchemy.engine import Engine
 from sqlmodel import (
     JSON,
     Column,
-    Field,
-    Relationship,
+    Field,  # pyright: ignore
+    Relationship,  # pyright: ignore
     SQLModel,
     UniqueConstraint,
     create_engine,
 )
 
 
-def get_engine(source: str):
+def get_engine(source: str) -> Engine:
     return create_engine(source, echo=False)
 
 
 class User(SQLModel, table=True):
-    __tablename__: str = "users"
+    __tablename__: str = "users"  # pyright: ignore
     id: int | None = Field(default=None, primary_key=True)
     email: EmailStr
     username: str
@@ -34,12 +35,12 @@ class User(SQLModel, table=True):
     comments: list["Comment"] = Relationship(back_populates="user")
     reactions: list["Reaction"] = Relationship(back_populates="user")
 
-    class Config:
+    class Config:  # pyright: ignore
         arbitrary_types_allowed = True
 
 
 class Post(SQLModel, table=True):
-    __tablename__: str = "posts"
+    __tablename__: str = "posts"  # pyright: ignore
     id: int | None = Field(default=None, primary_key=True)
     title: str
     # TODO: create special type for this
@@ -55,7 +56,7 @@ class Post(SQLModel, table=True):
     user: User = Relationship(back_populates="posts")
     comments: list["Comment"] = Relationship(back_populates="post")
 
-    def add_reaction(self, reaction: "ReactionKind"):
+    def add_reaction(self, reaction: "ReactionKind") -> None:
         match reaction:
             case ReactionKind.Like:
                 self.likes += 1
@@ -64,7 +65,7 @@ class Post(SQLModel, table=True):
                 self.dislikes += 1
                 self.score -= 1
 
-    def remove_reaction(self, reaction: "ReactionKind"):
+    def remove_reaction(self, reaction: "ReactionKind") -> None:
         match reaction:
             case ReactionKind.Like:
                 self.likes -= 1
@@ -73,14 +74,14 @@ class Post(SQLModel, table=True):
                 self.dislikes -= 1
                 self.score += 1
 
-    def add_other_reaction(self, reaction: "ReactionKind"):
+    def add_other_reaction(self, reaction: "ReactionKind") -> None:
         match reaction:
             case ReactionKind.Like:
                 self.dislikes += 1
             case ReactionKind.Dislike:
                 self.likes += 1
 
-    def remove_other_reaction(self, reaction: "ReactionKind"):
+    def remove_other_reaction(self, reaction: "ReactionKind") -> None:
         match reaction:
             case ReactionKind.Like:
                 self.dislikes -= 1
@@ -94,7 +95,7 @@ class ReactionKind(str, enum.Enum):
 
 
 class Reaction(SQLModel, table=True):
-    __tablename__: str = "reactions"
+    __tablename__: str = "reactions"  # pyright: ignore
 
     id: int | None = Field(default=None, primary_key=True)
     created_at: datetime = Field(default_factory=datetime.utcnow)
@@ -113,7 +114,7 @@ class Reaction(SQLModel, table=True):
 
 
 class Comment(SQLModel, table=True):
-    __tablename__: str = "comments"
+    __tablename__: str = "comments"  # pyright: ignore
     id: int | None = Field(default=None, primary_key=True)
     content: str
     # TODO: create special type for this too

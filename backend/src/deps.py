@@ -1,7 +1,7 @@
 import functools
 import logging
-import os
 import sys
+from typing import Callable
 
 import fastapi
 import fastapi.security
@@ -17,9 +17,9 @@ oauth2_scheme = fastapi.security.OAuth2PasswordBearer(tokenUrl="token")
 logger = logging.getLogger()
 
 
-@functools.lru_cache()
-def get_settings():
-    settings = config.Settings()  # type: ignore
+@functools.lru_cache
+def get_settings() -> config.Settings:
+    settings = config.Settings()  # pyright: ignore
 
     # Bootstrapping
     logger.setLevel(logging.DEBUG)
@@ -31,14 +31,14 @@ def get_settings():
 
     logger.info("First admin has id=%s", settings.SUPER_ADMIN_ID)
     try:
-        os.mkdir(settings.UPLOAD_STORAGE / "comments")
+        (settings.UPLOAD_STORAGE / "comments").mkdir()
     except FileExistsError:
         logger.debug("Comment folder exists")
     return settings
 
 
-@functools.lru_cache()
-def get_session():
+@functools.lru_cache
+def get_session() -> Callable[[], Session]:
     # TODO: why can't I use get_settings in Depends?
     settings = get_settings()
     engine = models.get_engine(settings.DB_URL)
@@ -51,7 +51,7 @@ def get_session():
 
 async def get_current_user(
     token: str = Depends(oauth2_scheme),
-    session=Depends(get_session),
+    session: Callable[[], Session]=Depends(get_session),
     settings: config.Settings = Depends(get_settings),
 ) -> schema.User:
     credentials_exception = HTTPException(
@@ -60,7 +60,9 @@ async def get_current_user(
         headers={"WWW-Authenticate": "Bearer"},
     )
     current_user = get_current_user_optional(
-        token=token, session=session, settings=settings
+        token=token,
+        session=session,
+        settings=settings,
     )
     if not current_user:
         raise credentials_exception
@@ -69,20 +71,22 @@ async def get_current_user(
 
 def get_current_user_optional(
     token: str = Depends(oauth2_scheme),
-    session=Depends(get_session),
+    session: Callable[[], Session]=Depends(get_session),
     settings: config.Settings = Depends(get_settings),
 ) -> schema.User | None:
     try:
         payload = jose.jwt.decode(
-            token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
+            token,
+            settings.SECRET_KEY,
+            algorithms=[settings.ALGORITHM],
         )
         if (res := payload.get("sub")) is None:
-            return
+            return None
         username: str = res
         token_data = schema.TokenData(username=username)
     except jose.JWTError:
-        return
+        return None
     user = user_service.get_user_by_username(session, username=token_data.username)
     if user is None:
-        return
+        return None
     return user

@@ -1,10 +1,10 @@
 import logging
 from typing import Callable
-from fastapi import HTTPException
 
+from fastapi import HTTPException
 from pydantic import EmailStr
 from sqlalchemy.orm import load_only
-from sqlmodel import Session, select
+from sqlmodel import Session, select  # pyright: ignore [reportUnknownVariableType]
 
 from src import models, schema, security
 from src.config import Settings
@@ -17,7 +17,7 @@ def add_superadmin(session: Callable[[], Session], settings: Settings) -> int:
         existing_admin = s.exec(
             select(models.User)
             .options(load_only("id"))
-            .where(models.User.username == settings.SUPER_ADMIN_USERNAME)
+            .where(models.User.username == settings.SUPER_ADMIN_USERNAME),
         ).one_or_none()
         if existing_admin and existing_admin.id:
             return existing_admin.id
@@ -30,19 +30,22 @@ def add_superadmin(session: Callable[[], Session], settings: Settings) -> int:
         s.add(new_admin_user)
         s.commit()
         try:
-            res_id = int(new_admin_user.id)  # type: ignore
+            assert new_admin_user.id, "Had a user without id in the db"
+            res_id = int(new_admin_user.id)
         except Exception as e:
-            logger.error("Error when trying to get id of new user", exc_info=e)
+            logger.exception("Error when trying to get id of new user", exc_info=e)
             raise
         return res_id
 
 
 def authenticate_user(
-    session: Callable[[], Session], username: str, password: str
+    session: Callable[[], Session],
+    username: str,
+    password: str,
 ) -> schema.User | None:
     with session() as s:
         res = s.exec(
-            select(models.User).where(models.User.username == username)
+            select(models.User).where(models.User.username == username),
         ).one_or_none()
         logger.debug("On login found user %s", res)
         if not res:
@@ -54,11 +57,12 @@ def authenticate_user(
 
 
 def get_user_by_username(
-    session: Callable[[], Session], username: str
+    session: Callable[[], Session],
+    username: str,
 ) -> schema.User | None:
     with session() as s:
         res = s.exec(
-            select(models.User).where(models.User.username == username)
+            select(models.User).where(models.User.username == username),
         ).one_or_none()
         if not res:
             return None
@@ -73,7 +77,7 @@ def add_user(
     username: str,
     password: str,
     email: EmailStr | None = None,
-):
+) -> int:
     if email is None:
         email = SENTINEL_NO_EMAIL
 
@@ -81,7 +85,8 @@ def add_user(
         existing_user = get_user_by_username(session=session, username=username)
         if existing_user:
             raise HTTPException(
-                status_code=400, detail=f"User with name {username} already exists"
+                status_code=400,
+                detail=f"User with name {username} already exists",
             )
         new_user = models.User(
             email=email,
@@ -90,3 +95,5 @@ def add_user(
         )
         s.add(new_user)
         s.commit()
+        assert new_user.id, "We created a user with no id?"
+        return new_user.id

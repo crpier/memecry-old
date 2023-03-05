@@ -1,3 +1,4 @@
+import json
 import logging
 import pathlib
 from enum import Enum
@@ -8,6 +9,7 @@ import fastapi.security
 import fastapi.staticfiles
 import fastapi.templating
 from fastapi import APIRouter, Body, Depends, Form, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import EmailStr
 from sqlmodel import Session
 
@@ -39,8 +41,26 @@ class GenericResponse(TypedDict):
     message: NotRequired[str]
 
 
-app = fastapi.FastAPI()
-route = APIRouter()
+app = fastapi.FastAPI(title="Memecry", description="Backend for memes")
+
+origins = [
+    "http://localhost",
+    "http://localhost:8000",
+    "http://localhost:3000",
+    "http://127.0.0.1",
+    "http://127.0.0.1:8000",
+    "http://127.0.0.1:3000",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+v1_router = APIRouter(prefix="/api/v1")
 
 logger = logging.getLogger()
 
@@ -48,32 +68,26 @@ logger = logging.getLogger()
 # so that we don't have to wait for request to see errors (if any)
 deps.get_session()
 
-templates = fastapi.templating.Jinja2Templates(directory="src/templates")
-
 ### Misc ###
-@route.get("/health")
+@app.get("/health")
 def check_health() -> GenericResponse:
     return {"status": Status.Success, "message": "Everything OK"}
 
 
-### Users ###
-@route.get("/me")
+@v1_router.get("/me")
 def get_me(current_user: schema.User = Depends(deps.get_current_user)) -> schema.User:
     return current_user
 
 
-@route.get("/post/{post_id}")
-def get_post(
-    post_id: int,
+@v1_router.get("/users/{username}/posts")
+def get_users_posts(
+    username: str,
     session: Callable[[], Session] = Depends(deps.get_session),
-) -> schema.Post:
-    return posting_service.get_post(
-        post_id=post_id,
-        session=session,
-    )
+) -> list[schema.Post]:
+    return posting_service.get_posts_by_user(username, session)
 
 
-@route.post("/signup")
+@v1_router.post("/signup")
 async def create_new_user(
     password: str = Form(),
     username: str = Form(),
@@ -95,132 +109,7 @@ async def create_new_user(
     return {"access_token": access_token, "token_type": "bearer"}
 
 
-@route.get("/users/{username}/posts")
-def get_users_posts(
-    username: str,
-    session: Callable[[], Session] = Depends(deps.get_session),
-) -> list[schema.Post]:
-    return posting_service.get_posts_by_user(username, session)
-
-
-### Comments ###
-@route.post("/post/{post_id}/comment")
-async def comment_on_post(  # noqa: PLR0913
-    post_id: int,
-    attachment: fastapi.UploadFile | None = None,
-    content: str = Body(),
-    current_user: schema.User = Depends(deps.get_current_user),
-    session: Callable[[], Session] = Depends(deps.get_session),
-    settings: config.Settings = Depends(deps.get_settings),
-) -> int:
-    comment_create = schema.CommentCreate(
-        content=content,
-        post_id=post_id,
-        user_id=current_user.id,
-    )
-    return await comment_service.post_comment(
-        session=session,
-        comment_data=comment_create,
-        attachment=attachment,
-        settings=settings,
-    )
-
-
-@route.post("/comment/{comment_id}/comment")
-async def post_comment_reply(  # noqa: PLR0913
-    comment_id: int,
-    attachment: fastapi.UploadFile | None = None,
-    content: str = Body(),
-    current_user: schema.User = Depends(deps.get_current_user),
-    session: Callable[[], Session] = Depends(deps.get_session),
-    settings: config.Settings = Depends(deps.get_settings),
-) -> int:
-    comment_create = schema.CommentCreate(
-        content=content,
-        parent_id=comment_id,
-        user_id=current_user.id,
-    )
-    return await comment_service.post_comment(
-        session=session,
-        comment_data=comment_create,
-        attachment=attachment,
-        settings=settings,
-    )
-
-
-@route.get("/post/{post_id}/comments", response_model=None)
-async def get_comments_on_post(
-    post_id: int,
-    session: Callable[[], Session] = Depends(deps.get_session),
-) -> comment_service.CommentsTreeResp:
-    return comment_service.get_comment_tree(
-        post_id=post_id,
-        session=session,
-    )
-
-
-#### REST endpoints for html ####
-@route.put("/post/{post_id}/like")
-async def like_post(
-    post_id: int,
-    current_user: schema.User = Depends(deps.get_current_user),
-    session: Callable[[], Session] = Depends(deps.get_session),
-) -> GenericResponse:
-    posting_service.add_reaction(
-        session,
-        post_id=post_id,
-        user_id=current_user.id,
-        reaction_kind=models.ReactionKind.Like,
-    )
-    return {"status": Status.Success}
-
-
-@route.put("/post/{post_id}/unlike")
-async def unlike_post(
-    post_id: int,
-    current_user: schema.User = Depends(deps.get_current_user),
-    session: Callable[[], Session] = Depends(deps.get_session),
-) -> GenericResponse:
-    posting_service.remove_reaction(
-        session,
-        post_id=post_id,
-        user_id=current_user.id,
-        reaction_kind=models.ReactionKind.Like,
-    )
-    return {"status": Status.Success}
-
-
-@route.put("/post/{post_id}/dislike")
-async def dislike_post(
-    post_id: int,
-    current_user: schema.User = Depends(deps.get_current_user),
-    session: Callable[[], Session] = Depends(deps.get_session),
-) -> GenericResponse:
-    posting_service.add_reaction(
-        session,
-        post_id=post_id,
-        user_id=current_user.id,
-        reaction_kind=models.ReactionKind.Dislike,
-    )
-    return {"status": Status.Success}
-
-
-@route.put("/post/{post_id}/undislike")
-async def undislike_post(
-    post_id: int,
-    current_user: schema.User = Depends(deps.get_current_user),
-    session: Callable[[], Session] = Depends(deps.get_session),
-) -> GenericResponse:
-    posting_service.remove_reaction(
-        session,
-        post_id=post_id,
-        user_id=current_user.id,
-        reaction_kind=models.ReactionKind.Dislike,
-    )
-    return {"status": Status.Success}
-
-
-@route.post("/token")
+@v1_router.post("/token")
 async def login(
     form_data: fastapi.security.OAuth2PasswordRequestForm = Depends(),
     session: Callable[[], Session] = Depends(deps.get_session),
@@ -244,7 +133,136 @@ async def login(
     return {"access_token": access_token, "token_type": "bearer"}
 
 
-@route.post("/upload")
+@v1_router.get("/post/{post_id}")
+def get_post(
+    post_id: int,
+    session: Callable[[], Session] = Depends(deps.get_session),
+) -> schema.Post:
+    return posting_service.get_post(
+        post_id=post_id,
+        session=session,
+    )
+
+
+### Comments ###
+@v1_router.post("/post/{post_id}/comment")
+async def comment_on_post(  # noqa: PLR0913
+    post_id: int,
+    attachment: fastapi.UploadFile | None = None,
+    content: str = Body(),
+    current_user: schema.User = Depends(deps.get_current_user),
+    session: Callable[[], Session] = Depends(deps.get_session),
+    settings: config.Settings = Depends(deps.get_settings),
+) -> int:
+    comment_create = schema.CommentCreate(
+        content=content,
+        post_id=post_id,
+        user_id=current_user.id,
+    )
+    return await comment_service.post_comment(
+        session=session,
+        comment_data=comment_create,
+        attachment=attachment,
+        settings=settings,
+    )
+
+
+@v1_router.post("/comment/{comment_id}/comment")
+async def post_comment_reply(  # noqa: PLR0913
+    comment_id: int,
+    attachment: fastapi.UploadFile | None = None,
+    content: str = Body(),
+    current_user: schema.User = Depends(deps.get_current_user),
+    session: Callable[[], Session] = Depends(deps.get_session),
+    settings: config.Settings = Depends(deps.get_settings),
+) -> int:
+    comment_create = schema.CommentCreate(
+        content=content,
+        parent_id=comment_id,
+        user_id=current_user.id,
+    )
+    return await comment_service.post_comment(
+        session=session,
+        comment_data=comment_create,
+        attachment=attachment,
+        settings=settings,
+    )
+
+
+# TODO: fix response model for this
+@v1_router.get("/post/{post_id}/comments", response_model=None)
+async def get_comments_on_post(
+    post_id: int,
+    session: Callable[[], Session] = Depends(deps.get_session),
+) -> comment_service.CommentsTreeResp:
+    return comment_service.get_comment_tree(
+        post_id=post_id,
+        session=session,
+    )
+
+
+#### REST endpoints for html ####
+@v1_router.put("/post/{post_id}/like")
+async def like_post(
+    post_id: int,
+    current_user: schema.User = Depends(deps.get_current_user),
+    session: Callable[[], Session] = Depends(deps.get_session),
+) -> GenericResponse:
+    posting_service.add_reaction(
+        session,
+        post_id=post_id,
+        user_id=current_user.id,
+        reaction_kind=models.ReactionKind.Like,
+    )
+    return {"status": Status.Success}
+
+
+@v1_router.put("/post/{post_id}/unlike")
+async def unlike_post(
+    post_id: int,
+    current_user: schema.User = Depends(deps.get_current_user),
+    session: Callable[[], Session] = Depends(deps.get_session),
+) -> GenericResponse:
+    posting_service.remove_reaction(
+        session,
+        post_id=post_id,
+        user_id=current_user.id,
+        reaction_kind=models.ReactionKind.Like,
+    )
+    return {"status": Status.Success}
+
+
+@v1_router.put("/post/{post_id}/dislike")
+async def dislike_post(
+    post_id: int,
+    current_user: schema.User = Depends(deps.get_current_user),
+    session: Callable[[], Session] = Depends(deps.get_session),
+) -> GenericResponse:
+    posting_service.add_reaction(
+        session,
+        post_id=post_id,
+        user_id=current_user.id,
+        reaction_kind=models.ReactionKind.Dislike,
+    )
+    return {"status": Status.Success}
+
+
+@v1_router.put("/post/{post_id}/undislike")
+async def undislike_post(
+    post_id: int,
+    current_user: schema.User = Depends(deps.get_current_user),
+    session: Callable[[], Session] = Depends(deps.get_session),
+) -> GenericResponse:
+    posting_service.remove_reaction(
+        session,
+        post_id=post_id,
+        user_id=current_user.id,
+        reaction_kind=models.ReactionKind.Dislike,
+    )
+    return {"status": Status.Success}
+
+
+@v1_router.post("/upload")
 async def upload_post(
     file: fastapi.UploadFile,
     title: str = Form(),
@@ -261,7 +279,7 @@ async def upload_post(
     )
 
 
-@route.get("/")
+@v1_router.get("/")
 def get_top_posts(
     limit: int = 5,
     offset: int = 0,
@@ -270,7 +288,7 @@ def get_top_posts(
     return posting_service.get_top_posts(session, offset=offset, limit=limit)
 
 
-@route.get("/new")
+@v1_router.get("/new")
 def show_newest_posts(
     limit: int = 5,
     offset: int = 0,
@@ -279,12 +297,10 @@ def show_newest_posts(
     return posting_service.get_newest_posts(session, offset=offset, limit=limit)
 
 
-app.include_router(route, prefix="/api/v1")
+app.include_router(v1_router)
 
 
 if __name__ == "__main__":
-    import json
-
     from fastapi.openapi.utils import get_openapi
 
     with pathlib.Path("openapi.json").open("w") as f:

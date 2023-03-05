@@ -78,12 +78,8 @@ class PostInDBBase(PostBase):
     user_id: int
     source: str
     top: bool
-    likes: int
-    dislikes: int
     created_at: datetime
     user: User
-    liked: bool | None = None
-    disliked: bool | None = None
     score: int
     comment_count: int
 
@@ -93,7 +89,8 @@ class PostInDBBase(PostBase):
 
 # Additional properites to return via API
 class Post(PostInDBBase):
-    pass
+    liked: bool | None = None
+    disliked: bool | None = None
 
 
 class PostInDB(PostInDBBase):

@@ -1,14 +1,15 @@
 import { BiRegularSearch } from "solid-icons/bi";
 import { useService } from "solid-services";
 import { A } from "solid-start";
+import getBackendService from "~/services";
 import BackendService from "~/services";
 
 export default function Nav() {
-  const backendService = useService(() => new BackendService());
+  const backendService = useService(getBackendService);
 
   function logIn() {
-    backendService().login("test-admin", "not-a-real-pass");
-    console.log("lol, logged in");
+    backendService().login("test-admin", "test-pass");
+    console.log("logged in");
   }
 
   return (

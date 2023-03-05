@@ -18,7 +18,7 @@ export default class BackendService {
       CREDENTIALS: "include",
     });
     [this.getUser, this.setUser] = createSignal();
-  }
+ }
 
   public async login(username: string, password: string) {
     const { access_token } = await this.appClient.default.loginApiV1TokenPost({

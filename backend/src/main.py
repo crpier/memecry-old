@@ -109,6 +109,8 @@ async def create_new_user(
     return {"access_token": access_token, "token_type": "bearer"}
 
 
+# TODO: update the backend to only use the /token endpoint
+@app.post("/token")
 @v1_router.post("/token")
 async def login(
     form_data: fastapi.security.OAuth2PasswordRequestForm = Depends(),
@@ -285,7 +287,9 @@ def get_top_posts(
     offset: int = 0,
     session: Callable[[], Session] = Depends(deps.get_session),
 ) -> list[schema.Post]:
-    return posting_service.get_top_posts(session, offset=offset, limit=limit)
+    posts = posting_service.get_top_posts(session, offset=offset, limit=limit)
+    logger.info("Showing %s posts", len(posts))
+    return posts
 
 
 @v1_router.get("/new")

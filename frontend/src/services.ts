@@ -8,7 +8,6 @@ export class BackendService {
   private appClient: MemecryClient;
   public getUser: Accessor<User | undefined>;
   public setUser: Setter<User | undefined>;
-  public createdAt: Date;
 
   constructor() {
     // TODO: check for token in localStorage on startup
@@ -18,7 +17,18 @@ export class BackendService {
       CREDENTIALS: "include",
     });
     [this.getUser, this.setUser] = createSignal();
-    this.createdAt = new Date();
+  }
+
+  public async getUserData() {
+    if (!this.getUser()) {
+      const access_token = localStorage.getItem("Authorization");
+      if (access_token) {
+        this.appClient.request.config.TOKEN = access_token;
+        this.appClient.request.config.WITH_CREDENTIALS = true;
+      }
+      this.setUser(await this.getOwnUser());
+    }
+    return this.getUser();
   }
 
   public async login(username: string, password: string) {
@@ -31,11 +41,9 @@ export class BackendService {
     this.appClient.request.config.TOKEN = access_token;
     this.appClient.request.config.WITH_CREDENTIALS = true;
     this.setUser(await this.getOwnUser());
-    console.log(this.createdAt)
   }
 
   public async getTopPosts() {
-    console.log(this.createdAt)
     try {
       return await this.appClient.default.getTopPostsApiV1Get();
     } catch (err) {

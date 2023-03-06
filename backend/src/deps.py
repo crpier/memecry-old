@@ -12,7 +12,10 @@ from sqlmodel import Session, SQLModel
 
 from src import config, models, schema, user_service
 
-oauth2_scheme = fastapi.security.OAuth2PasswordBearer(tokenUrl="token")
+oauth2_scheme = fastapi.security.OAuth2PasswordBearer(
+    tokenUrl="token", auto_error=False,
+)
+
 
 logger = logging.getLogger()
 
@@ -51,7 +54,7 @@ def get_session() -> Callable[[], Session]:
 
 async def get_current_user(
     token: str = Depends(oauth2_scheme),
-    session: Callable[[], Session]=Depends(get_session),
+    session: Callable[[], Session] = Depends(get_session),
     settings: config.Settings = Depends(get_settings),
 ) -> schema.User:
     credentials_exception = HTTPException(
@@ -70,10 +73,12 @@ async def get_current_user(
 
 
 def get_current_user_optional(
-    token: str = Depends(oauth2_scheme),
-    session: Callable[[], Session]=Depends(get_session),
+    token: str | None = Depends(oauth2_scheme),
+    session: Callable[[], Session] = Depends(get_session),
     settings: config.Settings = Depends(get_settings),
 ) -> schema.User | None:
+    if not token:
+        return None
     try:
         payload = jose.jwt.decode(
             token,

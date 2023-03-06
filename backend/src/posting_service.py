@@ -24,7 +24,7 @@ def get_top_posts(
     with session() as s:
         posts = s.exec(
             select(models.Post)
-            .where(col(models.Post.top) is True)
+            .where(col(models.Post.top) == True)  # noqa: E712
             .offset(offset)
             .limit(limit),
         ).all()

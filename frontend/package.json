@@ -18,6 +18,7 @@
     "@solidjs/meta": "^0.28.2",
     "@solidjs/router": "^0.7.0",
     "moment": "^2.29.4",
+    "prettier": "^2.8.4",
     "solid-icons": "^1.0.4",
     "solid-js": "^1.6.11",
     "solid-services": "^4.2.2",

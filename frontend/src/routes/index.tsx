@@ -1,4 +1,4 @@
-import { createResource, lazy, Suspense } from "solid-js";
+import { createResource, lazy, onMount, Suspense } from "solid-js";
 import BackendService from "~/services";
 import { useService } from "solid-services";
 import Posts from "../components/Posts";
@@ -9,9 +9,13 @@ import getBackendService from "~/services";
 // });
 
 export default function Home() {
-  const [postGetter, smth] = createResource(() => {
-    const backendService = useService(getBackendService);
+  const backendService = useService(getBackendService);
+  const [postGetter, {mutate, refetch}] = createResource(() => {
     return backendService().getTopPosts();
+  });
+  onMount(async () => {
+    await backendService().getUserData()
+    refetch()
   });
   return (
     <Suspense fallback={<p>Loading...</p>}>

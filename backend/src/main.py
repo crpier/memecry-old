@@ -288,6 +288,7 @@ def get_top_posts(
     session: Callable[[], Session] = Depends(deps.get_session),
     user: schema.User | None = Depends(deps.get_current_user_optional),
 ) -> list[schema.Post]:
+    logger.info("View posts from user: %s", user)
     posts = posting_service.get_top_posts(session, offset=offset, limit=limit)
     if user:
         for post in posts:
@@ -303,6 +304,7 @@ def get_top_posts(
                     post.disliked = True
                 case _:
                     ...
+    logger.info(posts)
     return posts
 
 

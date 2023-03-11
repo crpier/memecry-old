@@ -35,16 +35,18 @@ export default function Nav() {
           <Show
             fallback={
               <li
-                class="px-4 py-2 leading-none text-sm 
+                class="leading-none text-sm 
                 rounded border border-white text-white
                 hover:border-transparent hover:bg-white hover:text-gray-800"
               >
-                <button onClick={() => setShowLogin(true)}>Log in</button>
+                <button class="px-4 py-2" onClick={() => setShowLogin(true)}>
+                  Log in
+                </button>
               </li>
             }
-            when={store.currentUser()}
+            when={store.isLoggedIn()}
           >
-            <li class="mr-4 pr-2 rounded hover:bg-gray-600">
+            <li class="leading-7 mr-4 pr-2 rounded hover:bg-gray-600">
               <A href="/" class="flex flex-row">
                 <img
                   src="https://misc-personal-projects.s3.eu-west-1.amazonaws.com/memecry/13.jpg"
@@ -52,15 +54,16 @@ export default function Nav() {
                   class="mr-2 rounded"
                   style="width:2rem;height:2rem"
                 ></img>
-                <span>cris</span>
+                <span>{store.currentUser()?.username}</span>
               </A>
             </li>
             <li
-              class="mr-4 px-4 py-2 leading-none text-sm 
+              class="mr-4 leading-none text-sm 
                 bg-blue-500 rounded border border-blue-500 text-white
                 hover:border-transparent hover:bg-white hover:text-gray-800"
             >
               <button
+                class="px-4 py-2"
                 onClick={(e) => {
                   setShowUpload(true);
                 }}
@@ -69,18 +72,21 @@ export default function Nav() {
               </button>
             </li>
             <li
-              class="px-4 py-2 leading-none text-sm 
+              class="leading-none text-sm 
                 rounded border border-white text-white
                 hover:border-transparent hover:bg-white hover:text-gray-800"
             >
-              <button onClick={storeActions.logOut}>Log out</button>
+              <button class="px-4 py-2" onClick={storeActions.logOut}>
+                Log out
+              </button>
             </li>
           </Show>
         </ul>
       </nav>
       <Show when={showUpload()}>
-        <PostUploadForm hideUpload={() => setShowUpload(false)}
-        uploadPost={storeActions.uploadPost}
+        <PostUploadForm
+          hideUpload={() => setShowUpload(false)}
+          uploadPost={storeActions.uploadPost}
         />
       </Show>
       <Show when={showLogin()}>

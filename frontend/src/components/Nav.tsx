@@ -1,20 +1,23 @@
 import { BiRegularSearch } from "solid-icons/bi";
 import { createSignal, Show, Signal } from "solid-js";
 import { A } from "solid-start";
-import { User } from "~/memecry-backend";
 import { useStore } from "~/store";
 
 export default function Nav() {
-  const [store] = useStore();
-  const [appLoaded, setAppLoaded] = createSignal(false);
+  const [store, storeActions] = useStore();
 
   const [showUpload, setShowUpload] = createSignal(false);
   const [showLogin, setShowLogin] = createSignal(false);
 
-  setTimeout(() => {
-    console.log(store.currentUser());
-  }, 1000)
-  
+  const logIn = (e: SubmitEvent) => {
+    e.preventDefault();
+    const form: HTMLFormElement = e.target;
+    const username = form.elements[0].value;
+    const password = form.elements[1].value;
+    storeActions.logIn(username, password);
+    setShowLogin(false);
+  };
+
   return (
     <>
       <nav class="bg-gray-800 font-semibold">
@@ -36,15 +39,7 @@ export default function Nav() {
               <BiRegularSearch size={"2em"}></BiRegularSearch>
             </button>
           </li>
-          <Show when={store.currentUser()}
-            fallback={ <li
-              class="px-4 py-2 leading-none text-sm 
-                rounded border border-white text-white
-                hover:border-transparent hover:bg-white hover:text-gray-800"
-            >
-              <button onClick={() => setShowLogin(true)}>Log in</button>
-            </li>}
-          >
+          <Show when={store.currentUser()}>
             <li class="mr-4 pr-2 rounded hover:bg-gray-600">
               <A href="/" class="flex flex-row">
                 <img
@@ -77,6 +72,15 @@ export default function Nav() {
               <button>Log out</button>
             </li>
           </Show>
+          <Show when={!store.currentUser()}>
+            <li
+              class="px-4 py-2 leading-none text-sm 
+                rounded border border-white text-white
+                hover:border-transparent hover:bg-white hover:text-gray-800"
+            >
+              <button onClick={() => setShowLogin(true)}>Log in</button>
+            </li>
+          </Show>
         </ul>
       </nav>
       <Show when={showUpload()}>
@@ -96,7 +100,7 @@ export default function Nav() {
             </button>
           </div>
           <p class="mb-1 text-center text-3xl">Login</p>
-          <form id="upload-form">
+          <form id="upload-form" onSubmit={logIn}>
             <div class="mb-4">
               <label for="username">Username</label>
               <input

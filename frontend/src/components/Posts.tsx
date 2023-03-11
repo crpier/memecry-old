@@ -11,7 +11,7 @@ export default function Posts(props: { posts: Post[] | undefined }) {
     return moment(date).fromNow();
   }
   return (
-    <For fallback={<p>Loading posts...</p>} each={props.posts}>
+    <For fallback={<p class="text-white">Loading posts...</p>} each={props.posts}>
       {(post, i) => (
         <main class="text-center mx-auto flex flex-col items-center justify-center text-white">
           <div class="mt-8 border-2 border-gray-600 px-6 pb-6 text-center bg-[#101010]">

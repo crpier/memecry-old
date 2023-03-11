@@ -11,11 +11,12 @@ async function request_send(
   method: string,
   url: string,
   formData?: any,
+  body?: any
 ) {
   const headers: any = {};
   const opts: any = { method, headers };
 
-  const token = localStorage.getItem("Auth")
+  const token = localStorage.getItem("Auth");
   if (token) {
     headers["Authorization"] = `Bearer ${token}`;
   }
@@ -27,13 +28,20 @@ async function request_send(
     }
     opts.body = formReq;
   }
+
+  if (body) {
+    headers["Content-Type"] = "multipart/form-data";
+    opts.body = body;
+  }
   const response = await fetch(`http://localhost:8000${url}`, opts);
   return response.json();
 }
 
 export function Provider(props: any) {
-  const [isLoggedIn, setIsLoggedIn] = createSignal(localStorage.getItem("Auth"));
-  const [currentUser, { mutate, refetch }] = createResource(
+  const [isLoggedIn, setIsLoggedIn] = createSignal(
+    !!localStorage.getItem("Auth")
+  );
+  const [currentUser, { mutate: mutateCurrentUser, refetch }] = createResource(
     isLoggedIn,
     async () => {
       return request_send("get", "/api/v1/me");
@@ -42,6 +50,7 @@ export function Provider(props: any) {
 
   const state = {
     currentUser,
+    isLoggedIn,
   };
   const actions = {
     logIn: async (username: string, password: string) => {
@@ -51,8 +60,16 @@ export function Provider(props: any) {
         grant_type: "password",
       });
       const token = resp?.access_token;
-      localStorage.setItem("Auth", token)
+      localStorage.setItem("Auth", token);
       setIsLoggedIn(true);
+    },
+    logOut: async () => {
+      localStorage.removeItem("Auth");
+      setIsLoggedIn(false);
+      mutateCurrentUser(null);
+    },
+    uploadPost: (title: string, file: File) => {
+      return request_send("post", "/api/v1/upload", { title, file });
     },
   };
   const store = [state, actions];

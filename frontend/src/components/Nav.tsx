@@ -2,21 +2,14 @@ import { BiRegularSearch } from "solid-icons/bi";
 import { createSignal, Show, Signal } from "solid-js";
 import { A } from "solid-start";
 import { useStore } from "~/store";
+import Login from "./Login";
+import PostUploadForm from "./Upload";
 
 export default function Nav() {
   const [store, storeActions] = useStore();
 
-  const [showUpload, setShowUpload] = createSignal(false);
+  const [showUpload, setShowUpload] = createSignal(true);
   const [showLogin, setShowLogin] = createSignal(false);
-
-  const logIn = (e: SubmitEvent) => {
-    e.preventDefault();
-    const form: HTMLFormElement = e.target;
-    const username = form.elements[0].value;
-    const password = form.elements[1].value;
-    storeActions.logIn(username, password);
-    setShowLogin(false);
-  };
 
   return (
     <>
@@ -39,7 +32,18 @@ export default function Nav() {
               <BiRegularSearch size={"2em"}></BiRegularSearch>
             </button>
           </li>
-          <Show when={store.currentUser()}>
+          <Show
+            fallback={
+              <li
+                class="px-4 py-2 leading-none text-sm 
+                rounded border border-white text-white
+                hover:border-transparent hover:bg-white hover:text-gray-800"
+              >
+                <button onClick={() => setShowLogin(true)}>Log in</button>
+              </li>
+            }
+            when={store.currentUser()}
+          >
             <li class="mr-4 pr-2 rounded hover:bg-gray-600">
               <A href="/" class="flex flex-row">
                 <img
@@ -69,63 +73,23 @@ export default function Nav() {
                 rounded border border-white text-white
                 hover:border-transparent hover:bg-white hover:text-gray-800"
             >
-              <button>Log out</button>
-            </li>
-          </Show>
-          <Show when={!store.currentUser()}>
-            <li
-              class="px-4 py-2 leading-none text-sm 
-                rounded border border-white text-white
-                hover:border-transparent hover:bg-white hover:text-gray-800"
-            >
-              <button onClick={() => setShowLogin(true)}>Log in</button>
+              <button onClick={storeActions.logOut}>Log out</button>
             </li>
           </Show>
         </ul>
       </nav>
       <Show when={showUpload()}>
-        <div>Upload post here</div>
+        <PostUploadForm hideUpload={() => setShowUpload(false)}
+        uploadPost={storeActions.uploadPost}
+        />
       </Show>
       <Show when={showLogin()}>
-        <div
-          class="fixed flex flex-col rounded border bg-gray-700 px-4 pb-4 text-white"
-          style="left:35vw;top:20vh;width:30vw"
-        >
-          <div class="mt-2 flex justify-end">
-            <button
-              class="w-max rounded border bg-gray-900 px-2 text-right hover:bg-gray-700"
-              onClick={() => setShowLogin(false)}
-            >
-              X
-            </button>
-          </div>
-          <p class="mb-1 text-center text-3xl">Login</p>
-          <form id="upload-form" onSubmit={logIn}>
-            <div class="mb-4">
-              <label for="username">Username</label>
-              <input
-                class="w-full rounded border p-1 text-black"
-                name="username"
-              />
-            </div>
-            <div class="mb-4">
-              <label for="password">Password</label>
-              <input
-                type="password"
-                class="w-full rounded border p-1 text-black"
-                name="password"
-              />
-            </div>
-            <div class="m-auto flex flex-col justify-center items-center">
-              <button
-                type="submit"
-                class="m-auto rounded border bg-gray-900 px-2 py-1 text-right hover:bg-gray-700"
-              >
-                Sign in
-              </button>
-            </div>
-          </form>
-        </div>
+        <Login
+          hideLogin={() => setShowLogin(false)}
+          logIn={(username: string, password: string) =>
+            storeActions.logIn(username, password)
+          }
+        ></Login>
       </Show>
     </>
   );

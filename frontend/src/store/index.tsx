@@ -71,6 +71,9 @@ export function Provider(props: any) {
     uploadPost: (title: string, file: File) => {
       return request_send("post", "/api/v1/upload", { title, file });
     },
+    getTopPosts: () => {
+      return request_send("get", "/api/v1/")
+    }
   };
   const store = [state, actions];
   return (

@@ -8,7 +8,7 @@ import PostUploadForm from "./Upload";
 export default function Nav() {
   const [store, storeActions] = useStore();
 
-  const [showUpload, setShowUpload] = createSignal(true);
+  const [showUpload, setShowUpload] = createSignal(false);
   const [showLogin, setShowLogin] = createSignal(false);
 
   return (

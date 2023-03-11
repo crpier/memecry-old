@@ -43,6 +43,8 @@ class GenericResponse(TypedDict):
 
 app = fastapi.FastAPI(title="Memecry", description="Backend for memes")
 
+app.mount("/media", fastapi.staticfiles.StaticFiles(directory="media"))
+
 origins = [
     "http://localhost",
     "http://localhost:8000",

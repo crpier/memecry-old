@@ -62,9 +62,19 @@ export function Provider(props: any) {
         }
       }
     },
-    getTopPosts: async () => {
+    getTopPosts: async (post_id: number, lolaw: any) => {
       try {
         return app.getTopPostsApiV1Get();
+      } catch (e) {
+        if (e instanceof ApiError && e.status === 401) {
+          await actions.logOut();
+          return undefined;
+        }
+      }
+    },
+    getPost: async (post_id: number) => {
+      try {
+        return app.getPostApiV1PostPostIdGet(post_id);
       } catch (e) {
         if (e instanceof ApiError && e.status === 401) {
           await actions.logOut();

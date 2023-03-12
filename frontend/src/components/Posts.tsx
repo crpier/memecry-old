@@ -5,13 +5,20 @@ import { For } from "solid-js";
 import { A } from "solid-start";
 import { Post } from "~/memecry-backend";
 
-export default function Posts(props: { posts: Post[] | undefined }) {
+export default function Posts(props: {
+  posts: Post[] | undefined;
+  likePost: () => void;
+  dislikePost: () => void;
+}) {
   function parseTimeDelta(date: string) {
     // TODO: moment doesn't seem to be encouraged anymore
     return moment(date).fromNow();
   }
   return (
-    <For fallback={<p class="text-white">Loading post...</p>} each={props.posts}>
+    <For
+      fallback={<p class="text-white">Loading post...</p>}
+      each={props.posts}
+    >
       {(post, i) => (
         <main class="text-center mx-auto flex flex-col items-center justify-center text-white">
           <div class="mt-8 border-2 border-gray-600 px-6 pb-6 text-center bg-[#101010]">
@@ -39,6 +46,7 @@ export default function Posts(props: { posts: Post[] | undefined }) {
               <button
                 class="mr-2 rounded-md border border-gray-600 p-2 hover:border-gray-500"
                 classList={{ "bg-orange-800": post.liked }}
+                onClick={props.likePost}
               >
                 <ImArrowUp size={"1rem"} />
                 {post.liked}
@@ -46,6 +54,7 @@ export default function Posts(props: { posts: Post[] | undefined }) {
               <button
                 class="rounded-md border border-gray-600 p-2 hover:border-gray-500"
                 classList={{ "bg-blue-800": post.disliked }}
+                onClick={props.dislikePost}
               >
                 <ImArrowDown size={"1rem"} />
               </button>

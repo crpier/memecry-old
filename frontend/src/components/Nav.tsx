@@ -26,7 +26,7 @@ export default function Nav() {
           <li class={"mr-2 hover:text-gray-400"}>
             <A href="/latest">Latest</A>
           </li>
-          <div class="md:flex-grow"></div>
+          <div class="flex-grow"></div>
           <li class="mr-4 flex justify-center items-center rounded text-white hover:text-gray-300">
             <button>
               <BiRegularSearch size={"2em"}></BiRegularSearch>

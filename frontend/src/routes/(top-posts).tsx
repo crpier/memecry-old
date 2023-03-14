@@ -1,19 +1,34 @@
 import moment from "moment";
 import { BsChatLeft } from "solid-icons/bs";
 import { ImArrowDown, ImArrowUp } from "solid-icons/im";
-import { For, Index } from "solid-js";
+import { For, Index, Signal } from "solid-js";
 import { A } from "solid-start";
 import { Post } from "~/memecry-backend";
 
-import { createResource, createSignal } from "solid-js";
+import { createResource } from "solid-js";
 import { useStore } from "~/store";
+import { createStore, reconcile, unwrap } from "solid-js/store";
+
+function createPostsStore<T>(value: T): Signal<T> {
+  const [store, setStore] = createStore({
+    value,
+  });
+  return [
+    () => store.value,
+    (v: T) => {
+      const unwrapped = unwrap(store.value);
+      typeof v === "function" && (v = v(unwrapped));
+      setStore("value", reconcile(v));
+      return store.value;
+    },
+  ] as Signal<T>;
+}
 
 export default function TopPosts() {
   const [_, storeActions] = useStore();
   const [posts, { mutate, refetch }] = createResource<Post[]>(
-    async (_, info) => {
-      return storeActions.getTopPosts();
-    }
+    async () => storeActions.getTopPosts(),
+    { storage: createPostsStore }
   );
   function parseTimeDelta(date: string) {
     // TODO: moment doesn't seem to be encouraged anymore
@@ -51,7 +66,7 @@ export default function TopPosts() {
                 classList={{ "bg-orange-800": post().liked }}
                 onClick={async () => {
                   await storeActions.likePost(post().id);
-                  refetch(post().id);
+                  refetch();
                 }}
               >
                 <ImArrowUp size={"1rem"} />
@@ -60,9 +75,9 @@ export default function TopPosts() {
               <button
                 class="rounded-md border border-gray-600 p-2 hover:border-gray-500"
                 classList={{ "bg-blue-800": post().disliked }}
-                onClick={() => {
-                  storeActions.dislikePost(post().id);
-                  refetch(post().id);
+                onClick={async () => {
+                  await storeActions.dislikePost(post().id);
+                  refetch();
                 }}
               >
                 <ImArrowDown size={"1rem"} />

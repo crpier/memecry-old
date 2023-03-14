@@ -63,14 +63,14 @@ export default function TopPosts() {
   return (
     <Index fallback={<p class="text-white">Loading post...</p>} each={posts()}>
       {(post, i) => (
-        <main class="text-center mx-auto flex flex-col items-center justify-center text-white">
+        <main
+          class="text-center mx-auto flex flex-col items-center justify-center text-white"
+          style="width:640px"
+        >
           <div class="mt-8 border-2 border-gray-600 px-6 pb-6 text-center bg-[#101010]">
             <A href=".">
               <p class="my-4 text-xl font-bold">{post().title}</p>
-              <img
-                src={`http://localhost:8000${post().source}`}
-                style="width:500px;"
-              ></img>
+              <img src={`http://localhost:8000${post().source}`}></img>
             </A>
             <div class="flex flex-grow-0 flex-row items-center justify-start">
               <div class="my-2 mr-2 font-semibold">
@@ -127,6 +127,70 @@ export default function TopPosts() {
                 <BsChatLeft size={"1rem"} class="mt-1.5 mr-2" />
                 <div>{post().comment_count} comments</div>
               </A>
+            </div>
+            <div class="flex flex-col justify-start items-stretch mt-4">
+              <div class="flex flex-col mb-4">
+                <div class="flex flex-row">
+                  <div class="mr-4">
+                    <img
+                      src={
+                        "https://misc-personal-projects.s3.eu-west-1.amazonaws.com/memecry/13.jpg"
+                      }
+                      alt={"funny meme"}
+                      style="width:50px;height:50px"
+                    ></img>
+                  </div>
+                  <textarea
+                    class="border px-2 pt-1 h-10 flex-grow"
+                    placeholder="Write a comment"
+                  />
+                </div>
+                <div class="flex flex-row mt-1">
+                  <div class="flex-grow"></div>
+                  <button class="mr-2 bg-gray-600 px-2">Attach</button>
+                  <button class="bg-blue-500 px-2">Submit</button>
+                </div>
+              </div>
+              <div class="flex flex-row">
+                <div class="mr-4">
+                  <img
+                    src="https://misc-personal-projects.s3.eu-west-1.amazonaws.com/memecry/13.jpg"
+                    alt="funny meme"
+                    class="mt-1"
+                    style="width:62px;height:50px"
+                  ></img>
+                </div>
+                <div class="flex flex-col">
+                  <div class="flex flex-row">
+                    <A href="." class="text-blue-500 mr-2 font-bold">
+                      MrCommenter
+                    </A>
+                    <div class="text-sm text-gray-400 mr-1 mt-1">10 claps</div>
+                    <div class="text-sm text-gray-400 mr-1 mt-1">-</div>
+                    <div class="text-sm text-gray-400 mr-1 mt-1">15 boos</div>
+                    <div class="text-sm text-gray-400 mr-1 mt-1">-</div>
+                    <div class="text-sm text-gray-400 mr-1 mt-1">
+                      6 hours ago
+                    </div>
+                  </div>
+                  <div class="text-left">
+                    Hello this is a pretty big comment on my side. I like to
+                    post big comments all the time.
+                    <br /> LMAO
+                  </div>
+                  <div class="flex flex-row mt-2">
+                    <button class="mr-2">
+                      <ImArrowUp size={"1.5rem"} />
+                    </button>
+                    <button class="mr-4">
+                      <ImArrowDown size={"1.5rem"} />
+                    </button>
+                    <button class="text-blue-500 font-bold text-lg">
+                      Reply
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </main>

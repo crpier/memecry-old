@@ -1,7 +1,7 @@
 import moment from "moment";
 import { BsChatLeft } from "solid-icons/bs";
 import { ImArrowDown, ImArrowUp } from "solid-icons/im";
-import { For, Index, Signal } from "solid-js";
+import { Index, Signal } from "solid-js";
 import { A } from "solid-start";
 import { Post } from "~/memecry-backend";
 
@@ -9,27 +9,52 @@ import { createResource } from "solid-js";
 import { useStore } from "~/store";
 import { createStore, reconcile, unwrap } from "solid-js/store";
 
-function createPostsStore<T>(value: T): Signal<T> {
+function createPostsStore(value: Post[]): Signal<Post[]> {
   const [store, setStore] = createStore({
     value,
   });
   return [
     () => store.value,
-    (v: T) => {
+    (
+      v:
+        | ((val: Post[]) => Post[])
+        | { idx: number; key: keyof Post; val: any }
+        | Post[]
+    ) => {
       const unwrapped = unwrap(store.value);
       typeof v === "function" && (v = v(unwrapped));
+      if (!Array.isArray(v)) {
+        v = v as {
+          idx: number;
+          key: keyof Post;
+          val: any;
+        };
+        setStore("value", [v.idx], v.key, v.val);
+        return store.value;
+      }
       setStore("value", reconcile(v));
       return store.value;
     },
-  ] as Signal<T>;
+  ] as Signal<Post[]>;
 }
 
 export default function TopPosts() {
   const [_, storeActions] = useStore();
-  const [posts, { mutate, refetch }] = createResource<Post[]>(
+  const resourceResult = createResource<Post[]>(
     async () => storeActions.getTopPosts(),
+    // @ts-ignore
     { storage: createPostsStore }
   );
+  const posts = resourceResult[0];
+  const mutate: (
+    arg0:
+      | Post[]
+      | {
+          idx: number;
+          key: keyof Post;
+          val: any;
+        }
+  ) => void = resourceResult[1].mutate;
   function parseTimeDelta(date: string) {
     // TODO: moment doesn't seem to be encouraged anymore
     return moment(date).fromNow();
@@ -65,8 +90,14 @@ export default function TopPosts() {
                 class="mr-2 rounded-md border border-gray-600 p-2 hover:border-gray-500"
                 classList={{ "bg-orange-800": post().liked }}
                 onClick={async () => {
+                  mutate({ idx: i, key: "liked", val: true });
+                  mutate({ idx: i, key: "disliked", val: false });
+                  mutate({
+                    idx: i,
+                    key: "score",
+                    val: (oldScore: number) => oldScore + 1,
+                  });
                   await storeActions.likePost(post().id);
-                  refetch();
                 }}
               >
                 <ImArrowUp size={"1rem"} />
@@ -76,8 +107,14 @@ export default function TopPosts() {
                 class="rounded-md border border-gray-600 p-2 hover:border-gray-500"
                 classList={{ "bg-blue-800": post().disliked }}
                 onClick={async () => {
+                  mutate({ idx: i, key: "liked", val: false });
+                  mutate({ idx: i, key: "disliked", val: true });
+                  mutate({
+                    idx: i,
+                    key: "score",
+                    val: (oldScore: number) => oldScore - 1,
+                  });
                   await storeActions.dislikePost(post().id);
-                  refetch();
                 }}
               >
                 <ImArrowDown size={"1rem"} />

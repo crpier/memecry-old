@@ -137,17 +137,6 @@ async def login(
     return {"access_token": access_token, "token_type": "bearer"}
 
 
-@v1_router.get("/post/{post_id}")
-def get_post(
-    post_id: int,
-    session: Callable[[], Session] = Depends(deps.get_session),
-) -> schema.Post:
-    return posting_service.get_post(
-        post_id=post_id,
-        session=session,
-    )
-
-
 ### Comments ###
 @v1_router.post("/post/{post_id}/comment")
 async def comment_on_post(  # noqa: PLR0913
@@ -212,27 +201,41 @@ async def like_post(
     current_user: schema.User = Depends(deps.get_current_user),
     session: Callable[[], Session] = Depends(deps.get_session),
 ) -> GenericResponse:
-    posting_service.add_reaction(
+    match posting_service.find_reaction(
         session,
         post_id=post_id,
         user_id=current_user.id,
-        reaction_kind=models.ReactionKind.Like,
-    )
-    return {"status": Status.Success}
+    ):
+        case models.Reaction(kind=models.ReactionKind.Like):
+            posting_service.remove_reaction(
+                session,
+                post_id=post_id,
+                user_id=current_user.id,
+                reaction_kind=models.ReactionKind.Like,
+            )
+        case models.Reaction(kind=models.ReactionKind.Dislike):
+            posting_service.remove_reaction(
+                session,
+                post_id=post_id,
+                user_id=current_user.id,
+                reaction_kind=models.ReactionKind.Dislike,
+            )
+            posting_service.add_reaction(
+                session,
+                post_id=post_id,
+                user_id=current_user.id,
+                reaction_kind=models.ReactionKind.Like,
+            )
+        case None:
+            posting_service.add_reaction(
+                session,
+                post_id=post_id,
+                user_id=current_user.id,
+                reaction_kind=models.ReactionKind.Like,
+            )
+        case _:
+            logger.error("Unexpected path reached: all reactions should have a kind")
 
-
-@v1_router.put("/post/{post_id}/unlike")
-async def unlike_post(
-    post_id: int,
-    current_user: schema.User = Depends(deps.get_current_user),
-    session: Callable[[], Session] = Depends(deps.get_session),
-) -> GenericResponse:
-    posting_service.remove_reaction(
-        session,
-        post_id=post_id,
-        user_id=current_user.id,
-        reaction_kind=models.ReactionKind.Like,
-    )
     return {"status": Status.Success}
 
 
@@ -242,12 +245,41 @@ async def dislike_post(
     current_user: schema.User = Depends(deps.get_current_user),
     session: Callable[[], Session] = Depends(deps.get_session),
 ) -> GenericResponse:
-    posting_service.add_reaction(
+    match posting_service.find_reaction(
         session,
         post_id=post_id,
         user_id=current_user.id,
-        reaction_kind=models.ReactionKind.Dislike,
-    )
+    ):
+        case models.Reaction(kind=models.ReactionKind.Dislike):
+            posting_service.remove_reaction(
+                session,
+                post_id=post_id,
+                user_id=current_user.id,
+                reaction_kind=models.ReactionKind.Dislike,
+            )
+        case models.Reaction(kind=models.ReactionKind.Like):
+            posting_service.remove_reaction(
+                session,
+                post_id=post_id,
+                user_id=current_user.id,
+                reaction_kind=models.ReactionKind.Like,
+            )
+            posting_service.add_reaction(
+                session,
+                post_id=post_id,
+                user_id=current_user.id,
+                reaction_kind=models.ReactionKind.Dislike,
+            )
+        case None:
+            posting_service.add_reaction(
+                session,
+                post_id=post_id,
+                user_id=current_user.id,
+                reaction_kind=models.ReactionKind.Dislike,
+            )
+        case _:
+            logger.error("Unexpected path reached: all reactions should have a kind")
+
     return {"status": Status.Success}
 
 
@@ -281,6 +313,33 @@ async def upload_post(
         uploaded_file=file,
         settings=settings,
     )
+
+
+@v1_router.get("/post/{post_id}")
+def get_post(
+    post_id: int,
+    session: Callable[[], Session] = Depends(deps.get_session),
+    user: schema.User | None = Depends(deps.get_current_user_optional),
+) -> schema.Post:
+    post = posting_service.get_post(
+        post_id=post_id,
+        session=session,
+    )
+    if user:
+        reaction = posting_service.get_user_reaction_on_post(
+            user_id=user.id,
+            post_id=post.id,
+            session=session,
+        )
+        match reaction:
+            case models.ReactionKind.Like:
+                post.liked = True
+            case models.ReactionKind.Dislike:
+                post.disliked = True
+            case _:
+                ...
+    logger.info(post)
+    return post
 
 
 @v1_router.get("/")

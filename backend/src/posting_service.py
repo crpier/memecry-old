@@ -79,6 +79,18 @@ async def upload_post(
         return new_post_id
 
 
+def find_reaction(
+    session: Callable[[], Session], user_id: int, post_id: int,
+) -> models.Reaction | None:
+    with session() as s:
+        return s.exec(
+            select(models.Reaction).where(
+                models.Reaction.post_id == post_id,
+                models.Reaction.user_id == user_id,
+            ),
+        ).one_or_none()
+
+
 def add_reaction(
     session: Callable[[], Session],
     user_id: int,

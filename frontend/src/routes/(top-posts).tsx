@@ -29,7 +29,12 @@ function createPostsStore(value: Post[]): Signal<Post[]> {
           key: keyof Post;
           val: any;
         };
-        setStore("value", [v.idx], v.key, v.val);
+        console.log(v.idx, v.key, v.val);
+        if (v.val !== undefined) {
+          setStore("value", [v.idx], v.key, v.val);
+        } else {
+          setStore("value", [v.idx], v.key);
+        }
         return store.value;
       }
       setStore("value", reconcile(v));
@@ -41,7 +46,21 @@ function createPostsStore(value: Post[]): Signal<Post[]> {
 export default function TopPosts() {
   const [_, storeActions] = useStore();
   const resourceResult = createResource<Post[]>(
-    async () => storeActions.getTopPosts(),
+    async (_, info) => {
+      if (info.refetching) {
+        const { post_id, store_id } = info.refetching as {
+          post_id: number;
+          store_id: number;
+        };
+        const newPost = await storeActions.getPost(post_id);
+        return {
+          idx: store_id,
+          key: (post: Post) => newPost,
+          value: undefined,
+        };
+      }
+      return storeActions.getTopPosts();
+    },
     // @ts-ignore
     { storage: createPostsStore }
   );
@@ -55,6 +74,7 @@ export default function TopPosts() {
           val: any;
         }
   ) => void = resourceResult[1].mutate;
+  const refetch = resourceResult[1].refetch;
   function parseTimeDelta(date: string) {
     // TODO: moment doesn't seem to be encouraged anymore
     return moment(date).fromNow();
@@ -90,14 +110,14 @@ export default function TopPosts() {
                 class="mr-2 rounded-md border border-gray-600 p-2 hover:border-gray-500"
                 classList={{ "bg-orange-800": post().liked }}
                 onClick={async () => {
-                  mutate({ idx: i, key: "liked", val: true });
-                  mutate({ idx: i, key: "disliked", val: false });
                   mutate({
                     idx: i,
-                    key: "score",
-                    val: (oldScore: number) => oldScore + 1,
+                    key: "liked",
+                    val: (liked: boolean) => !liked,
                   });
+                  mutate({ idx: i, key: "disliked", val: false });
                   await storeActions.likePost(post().id);
+                  refetch({ post_id: post().id, store_id: i });
                 }}
               >
                 <ImArrowUp size={"1rem"} />
@@ -108,13 +128,13 @@ export default function TopPosts() {
                 classList={{ "bg-blue-800": post().disliked }}
                 onClick={async () => {
                   mutate({ idx: i, key: "liked", val: false });
-                  mutate({ idx: i, key: "disliked", val: true });
                   mutate({
                     idx: i,
-                    key: "score",
-                    val: (oldScore: number) => oldScore - 1,
+                    key: "disliked",
+                    val: (liked: boolean) => !liked,
                   });
                   await storeActions.dislikePost(post().id);
+                  refetch({ post_id: post().id, store_id: i });
                 }}
               >
                 <ImArrowDown size={"1rem"} />

@@ -64,7 +64,7 @@ export function Provider(props: any) {
     },
     getTopPosts: async (post_id: number, lolaw: any) => {
       try {
-        return app.getTopPostsApiV1Get();
+        return app.getTopPostsApiV1Get(20);
       } catch (e) {
         if (e instanceof ApiError && e.status === 401) {
           await actions.logOut();

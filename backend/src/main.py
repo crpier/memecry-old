@@ -338,19 +338,18 @@ def get_post(
                 post.disliked = True
             case _:
                 ...
-    logger.info(post)
     return post
 
 
 @v1_router.get("/")
 def get_top_posts(
-    limit: int = 5,
+    limit: int = 20,
     offset: int = 0,
     session: Callable[[], Session] = Depends(deps.get_session),
     user: schema.User | None = Depends(deps.get_current_user_optional),
 ) -> list[schema.Post]:
-    logger.info("View posts from user: %s", user)
     posts = posting_service.get_top_posts(session, offset=offset, limit=limit)
+    logger.info(limit)
     if user:
         for post in posts:
             reaction = posting_service.get_user_reaction_on_post(
@@ -365,7 +364,6 @@ def get_top_posts(
                     post.disliked = True
                 case _:
                     ...
-    logger.info(posts)
     return posts
 
 

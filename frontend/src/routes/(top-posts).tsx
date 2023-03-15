@@ -29,7 +29,6 @@ function createPostsStore(value: Post[]): Signal<Post[]> {
           key: keyof Post;
           val: any;
         };
-        console.log(v.idx, v.key, v.val);
         if (v.val !== undefined) {
           setStore("value", [v.idx], v.key, v.val);
         } else {
@@ -85,12 +84,15 @@ export default function TopPosts() {
       {(post, i) => (
         <main
           class="text-center mx-auto flex flex-col items-center justify-center text-white"
-          style="width:640px"
+          style="width:600px"
         >
           <div class="mt-8 border-2 border-gray-600 px-6 pb-6 text-center bg-[#101010]">
+            <p class="my-4 text-xl font-bold">{post().title}</p>
             <A href=".">
-              <p class="my-4 text-xl font-bold">{post().title}</p>
-              <img src={`http://localhost:8000${post().source}`}></img>
+              <img
+                src={`http://localhost:8000${post().source}`}
+                style="width:584px"
+              ></img>
             </A>
             <div class="flex flex-grow-0 flex-row items-center justify-start">
               <div class="my-2 mr-2 font-semibold">
@@ -148,8 +150,9 @@ export default function TopPosts() {
                 <div>{post().comment_count} comments</div>
               </A>
             </div>
+
             <div class="flex flex-col justify-start items-stretch mt-4">
-              <div class="flex flex-col mb-4">
+              <div class="flex flex-col mb-1">
                 <div class="flex flex-row">
                   <div class="mr-4">
                     <img
@@ -161,11 +164,11 @@ export default function TopPosts() {
                     ></img>
                   </div>
                   <textarea
-                    class="border px-2 pt-1 h-10 flex-grow"
+                    class="border px-2 pt-1 h-10 flex-grow text-black"
                     placeholder="Write a comment"
                   />
                 </div>
-                <div class="flex flex-row mt-1">
+                <div class="flex flex-row">
                   <div class="flex-grow"></div>
                   <button class="mr-2 bg-gray-600 px-2">Attach</button>
                   <button class="bg-blue-500 px-2">Submit</button>

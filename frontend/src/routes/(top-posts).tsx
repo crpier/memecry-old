@@ -1,13 +1,14 @@
 import moment from "moment";
 import { BsChatLeft } from "solid-icons/bs";
 import { ImArrowDown, ImArrowUp } from "solid-icons/im";
-import { Index, Signal } from "solid-js";
+import { createSignal, Index, Show, Signal } from "solid-js";
 import { A } from "solid-start";
 import { Post } from "~/memecry-backend";
 
 import { createResource } from "solid-js";
 import { useStore } from "~/store";
 import { createStore, reconcile, unwrap } from "solid-js/store";
+import Comments from "~/components/Comments";
 
 function createPostsStore(value: Post[]): Signal<Post[]> {
   const [store, setStore] = createStore({
@@ -44,6 +45,12 @@ function createPostsStore(value: Post[]): Signal<Post[]> {
 
 export default function TopPosts() {
   const [_, storeActions] = useStore();
+  const [showComments, setShowComments] = createSignal<number[]>([]);
+
+  const showCommentsForPost = (postId: number) => {
+    setShowComments([...showComments(), postId]);
+  };
+
   const resourceResult = createResource<Post[]>(
     async (_, info) => {
       if (info.refetching) {
@@ -74,13 +81,11 @@ export default function TopPosts() {
         }
   ) => void = resourceResult[1].mutate;
   const refetch = resourceResult[1].refetch;
+
   function parseTimeDelta(date: string) {
     // TODO: moment doesn't seem to be encouraged anymore
     return moment(date).fromNow();
   }
-  const postComment = (postId: number) => {
-    storeActions.postComment(postId, "lolaw blanaow");
-  };
 
   return (
     <Index fallback={<p class="text-white">Loading post...</p>} each={posts()}>
@@ -145,84 +150,17 @@ export default function TopPosts() {
                 <ImArrowDown size={"1rem"} />
               </button>
               <div class="flex-grow"></div>
-              <A
-                href="."
+              <button
                 class="flex flex-row rounded-md border border-gray-600 p-2 hover:border-gray-500"
+                onClick={() => showCommentsForPost(post().id)}
               >
                 <BsChatLeft size={"1rem"} class="mt-1.5 mr-2" />
                 <div>{post().comment_count} comments</div>
-              </A>
+              </button>
             </div>
-
-            <div class="flex flex-col justify-start items-stretch mt-4">
-              <div class="flex flex-col mb-1">
-                <div class="flex flex-row">
-                  <div class="mr-4">
-                    <img
-                      src={
-                        "https://misc-personal-projects.s3.eu-west-1.amazonaws.com/memecry/13.jpg"
-                      }
-                      alt={"funny meme"}
-                      style="width:50px;height:50px"
-                    ></img>
-                  </div>
-                  <textarea
-                    class="border px-2 pt-1 h-10 flex-grow text-black"
-                    placeholder="Write a comment"
-                  />
-                </div>
-                <div class="flex flex-row">
-                  <div class="flex-grow"></div>
-                  <button class="mr-2 bg-gray-600 px-2">Attach</button>
-                  <button
-                    class="bg-blue-500 px-2"
-                    onclick={() => postComment(post().id)}
-                  >
-                    Submit
-                  </button>
-                </div>
-              </div>
-              <div class="flex flex-row">
-                <div class="mr-4">
-                  <img
-                    src="https://misc-personal-projects.s3.eu-west-1.amazonaws.com/memecry/13.jpg"
-                    alt="funny meme"
-                    class="mt-1"
-                    style="width:62px;height:50px"
-                  ></img>
-                </div>
-                <div class="flex flex-col">
-                  <div class="flex flex-row">
-                    <A href="." class="text-blue-500 mr-2 font-bold">
-                      MrCommenter
-                    </A>
-                    <div class="text-sm text-gray-400 mr-1 mt-1">10 claps</div>
-                    <div class="text-sm text-gray-400 mr-1 mt-1">-</div>
-                    <div class="text-sm text-gray-400 mr-1 mt-1">15 boos</div>
-                    <div class="text-sm text-gray-400 mr-1 mt-1">-</div>
-                    <div class="text-sm text-gray-400 mr-1 mt-1">
-                      6 hours ago
-                    </div>
-                  </div>
-                  <div class="text-left">
-                    Hello this is a pretty big comment on my side. I like to
-                    post big comments all the time.
-                    <br /> LMAO
-                  </div>
-                  <div class="flex flex-row mt-2">
-                    <button class="mr-2">
-                      <ImArrowUp size={"1.5rem"} />
-                    </button>
-                    <button class="mr-4">
-                      <ImArrowDown size={"1.5rem"} />
-                    </button>
-                    <button class="text-blue-500 font-bold text-lg">
-                      Reply
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
+            <Show when={showComments().includes(post().id)}>
+              <Comments post={post}></Comments>
+            </Show>
           </div>
         </main>
       )}

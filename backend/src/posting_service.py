@@ -80,7 +80,9 @@ async def upload_post(
 
 
 def find_reaction(
-    session: Callable[[], Session], user_id: int, post_id: int,
+    session: Callable[[], Session],
+    user_id: int,
+    post_id: int,
 ) -> models.Reaction | None:
     with session() as s:
         return s.exec(

@@ -78,6 +78,9 @@ export default function TopPosts() {
     // TODO: moment doesn't seem to be encouraged anymore
     return moment(date).fromNow();
   }
+  const postComment = (postId: number) => {
+    storeActions.postComment(postId, "lolaw blanaow");
+  };
 
   return (
     <Index fallback={<p class="text-white">Loading post...</p>} each={posts()}>
@@ -171,7 +174,12 @@ export default function TopPosts() {
                 <div class="flex flex-row">
                   <div class="flex-grow"></div>
                   <button class="mr-2 bg-gray-600 px-2">Attach</button>
-                  <button class="bg-blue-500 px-2">Submit</button>
+                  <button
+                    class="bg-blue-500 px-2"
+                    onclick={() => postComment(post().id)}
+                  >
+                    Submit
+                  </button>
                 </div>
               </div>
               <div class="flex flex-row">

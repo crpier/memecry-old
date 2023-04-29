@@ -152,7 +152,7 @@ def remove_reaction(
         )
 
         assert (
-            res.rowcount > 0  # pyright: ignore
+            res.rowcount > 0
         ), f"Cannot unlike {post_id=}: there was no like before"
         res = s.execute(
             select(models.Post).where(models.Post.id == post_id),

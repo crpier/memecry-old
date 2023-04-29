@@ -349,6 +349,7 @@ def get_top_posts(
     user: schema.User | None = Depends(deps.get_current_user_optional),
 ) -> list[schema.Post]:
     posts = posting_service.get_top_posts(session, offset=offset, limit=limit)
+    logger.info(limit)
     if user:
         for post in posts:
             reaction = posting_service.get_user_reaction_on_post(

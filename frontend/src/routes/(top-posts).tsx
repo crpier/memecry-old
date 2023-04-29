@@ -152,7 +152,11 @@ export default function TopPosts() {
               <div class="flex-grow"></div>
               <button
                 class="flex flex-row rounded-md border border-gray-600 p-2 hover:border-gray-500"
-                onClick={() => showCommentsForPost(post().id)}
+                onClick={() => {
+                  if (post().comment_count > 0) {
+                    showCommentsForPost(post().id);
+                  }
+                }}
               >
                 <BsChatLeft size={"1rem"} class="mt-1.5 mr-2" />
                 <div>{post().comment_count} comments</div>

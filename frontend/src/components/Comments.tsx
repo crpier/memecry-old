@@ -20,7 +20,12 @@ export default function Comments(props: { post: Accessor<Post> }) {
   }
 
   return (
-    <Show when={comments.state == "ready"}>
+    <Show
+      when={
+        comments.state == "ready" &&
+        Object.keys(comments().comments).length !== 0
+      }
+    >
       <div class="flex flex-col justify-start items-stretch mt-4">
         <div class="flex flex-col mb-1">
           <div class="flex flex-row">
